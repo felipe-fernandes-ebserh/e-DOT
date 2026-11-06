@@ -35,10 +35,17 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     print("App SQLite tables checked/created.")
 
+    # Initialize Background Polling Service for CSH (MySQL)
+    from .services.csh_polling_service import CshPollingService
+    app.state.csh_polling_service = CshPollingService(app.state.app_db)
+    app.state.csh_polling_service.start()
+
     yield
 
     # Shutdown
     print("Shutting down...")
+    if hasattr(app.state, 'csh_polling_service') and app.state.csh_polling_service:
+        await app.state.csh_polling_service.stop()
     if hasattr(app.state, 'aghu_db') and app.state.aghu_db:
         await app.state.aghu_db.close_connection()
         print("AGHU PostgreSQL connection pool closed.")
@@ -109,11 +116,13 @@ if os.path.exists(assets_dir):
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 # Roteadores da API
-from .routers import paciente, auth, admin, health
+from .routers import paciente, auth, admin, health, notificacao_obitos, usuarios
 app.include_router(health.router)
 app.include_router(paciente.router)
 app.include_router(auth.router)
 app.include_router(admin.router)
+app.include_router(notificacao_obitos.router)
+app.include_router(usuarios.router)
 
 @app.get("/{full_path:path}")
 async def serve_frontend(full_path: str):

@@ -119,7 +119,78 @@
           </div>
         </div>
 
-        <!-- 3. Guias e Exemplos de Perfis (Informativo) -->
+        <!-- 3. Painel de Destinatários de Alertas do Teams (CIHDOTT) -->
+        <div class="p-5 bg-white border border-gray-200 rounded-xl shadow-sm space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between border-b pb-3 gap-3">
+            <div>
+              <h2 class="text-lg font-bold text-paper-text flex items-center gap-2">
+                <BellAlertIcon class="h-6 w-6 text-amber-500" />
+                Destinatários de Alertas do Teams (CIHDOTT)
+              </h2>
+              <p class="text-xs text-gray-500 mt-0.5">
+                Profissionais que recebem os alertas sonoros e @menções diretas no canal do Microsoft Teams.
+              </p>
+            </div>
+            <Button variant="primary" @click="showAddDestModal = true">
+              <template #icon>
+                <UserPlusIcon class="h-5 w-5" />
+              </template>
+              Incluir Destinatário Teams
+            </Button>
+          </div>
+
+          <!-- Tabela de Destinatários do Teams -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-gray-600">
+              <thead class="bg-gray-50 text-xs uppercase font-semibold text-gray-500 border-b">
+                <tr>
+                  <th class="py-3 px-4">Nome do Profissional</th>
+                  <th class="py-3 px-4">E-mail Institucional Teams (UPN)</th>
+                  <th class="py-3 px-4">Cargo / Setor</th>
+                  <th class="py-3 px-4 text-center">Status</th>
+                  <th class="py-3 px-4 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr v-for="dest in destList" :key="dest.id" class="hover:bg-gray-50/80 transition-colors">
+                  <td class="py-3 px-4 font-bold text-gray-800">
+                    {{ dest.nome }}
+                  </td>
+                  <td class="py-3 px-4 text-gray-700 font-mono text-xs">{{ dest.email_teams }}</td>
+                  <td class="py-3 px-4 text-gray-600 text-xs">{{ dest.cargo_setor || 'CIHDOTT / HC-UFPE' }}</td>
+                  <td class="py-3 px-4 text-center">
+                    <span :class="dest.ativo ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'" class="px-2 py-0.5 text-xs font-bold rounded">
+                      {{ dest.ativo ? 'ATIVO' : 'INATIVO' }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-right space-x-2">
+                    <button 
+                      @click="toggleDestStatus(dest)" 
+                      :class="dest.ativo ? 'text-amber-600 hover:bg-amber-50 border-amber-200' : 'text-emerald-600 hover:bg-emerald-50 border-emerald-200'"
+                      class="px-2.5 py-1 text-xs font-semibold border rounded-md transition"
+                    >
+                      {{ dest.ativo ? 'Inativar' : 'Ativar' }}
+                    </button>
+                    <button 
+                      @click="removeDest(dest.id)" 
+                      title="Excluir Destinatário"
+                      class="px-2 py-1 text-xs font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition"
+                    >
+                      Excluir
+                    </button>
+                  </td>
+                </tr>
+                <tr v-if="destList.length === 0">
+                  <td colspan="5" class="py-6 text-center text-gray-400">
+                    Nenhum destinatário cadastrado no canal do Teams.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 4. Guias e Exemplos de Perfis (Informativo) -->
         <div class="p-5 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
           <div class="flex items-center space-x-2 text-paper-text font-bold text-md border-b pb-2">
             <ShieldCheckIcon class="h-5 w-5 text-gray-600" />
@@ -254,11 +325,54 @@
         </div>
       </form>
     </Modal>
+
+    <!-- Modal 3: Incluir Novo Destinatário Teams -->
+    <Modal :show="showAddDestModal" @close="showAddDestModal = false">
+      <template #header>Incluir Destinatário do Teams</template>
+      <form @submit.prevent="saveDest" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Nome Completo do Profissional *</label>
+          <input 
+            v-model="newDest.nome" 
+            type="text" 
+            required 
+            placeholder="Ex: Dra. Ana Paula"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-paper-text focus:outline-none text-sm"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">E-mail Institucional Teams (UPN) *</label>
+          <input 
+            v-model="newDest.email_teams" 
+            type="email" 
+            required 
+            placeholder="Ex: ana.paula@ebserh.gov.br"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-paper-text focus:outline-none text-sm"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Cargo / Setor</label>
+          <input 
+            v-model="newDest.cargo_setor" 
+            type="text" 
+            placeholder="Ex: Médico Plantonista CIHDOTT"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-paper-text focus:outline-none text-sm"
+          />
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-4 border-t">
+          <Button variant="secondary" type="button" @click="showAddDestModal = false">Cancelar</Button>
+          <Button variant="primary" type="submit">Cadastrar Destinatário</Button>
+        </div>
+      </form>
+    </Modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import Card from '../components/Card.vue';
 import Modal from '../components/Modal.vue';
 import Button from '../components/Button.vue';
@@ -273,7 +387,8 @@ import {
   UserIcon,
   MagnifyingGlassIcon,
   CheckCircleIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  BellAlertIcon
 } from '@heroicons/vue/24/outline';
 
 const authStore = useAuthStore();
@@ -412,4 +527,65 @@ const toggleUserStatus = (user: UserRBAC) => {
 const removeUser = (userId: number) => {
   usersList.value = usersList.value.filter(u => u.id !== userId);
 };
+
+// --- Gestão de Destinatários do Microsoft Teams ---
+interface DestinatarioTeams {
+  id: number;
+  nome: string;
+  email_teams: string;
+  cargo_setor?: string;
+  ativo: boolean;
+}
+
+const destList = ref<DestinatarioTeams[]>([]);
+const showAddDestModal = ref(false);
+const newDest = ref({
+  nome: '',
+  email_teams: '',
+  cargo_setor: 'CIHDOTT / HC-UFPE'
+});
+
+const loadDestinatarios = async () => {
+  try {
+    const res = await api.get<DestinatarioTeams[]>('/api/notificacoes/destinatarios?apenas_ativos=false');
+    destList.value = res.data;
+  } catch (err) {
+    console.error('Erro ao carregar lista de destinatários do Teams:', err);
+  }
+};
+
+const saveDest = async () => {
+  if (!newDest.value.nome.trim() || !newDest.value.email_teams.trim()) return;
+  try {
+    await api.post('/api/notificacoes/destinatarios', newDest.value);
+    newDest.value = { nome: '', email_teams: '', cargo_setor: 'CIHDOTT / HC-UFPE' };
+    showAddDestModal.value = false;
+    await loadDestinatarios();
+  } catch (err: any) {
+    alert(err.response?.data?.detail || 'Erro ao cadastrar destinatário.');
+  }
+};
+
+const toggleDestStatus = async (dest: DestinatarioTeams) => {
+  try {
+    await api.put(`/api/notificacoes/destinatarios/${dest.id}`, { ativo: !dest.ativo });
+    await loadDestinatarios();
+  } catch (err: any) {
+    alert(err.response?.data?.detail || 'Erro ao alterar status do destinatário.');
+  }
+};
+
+const removeDest = async (id: number) => {
+  if (!confirm('Deseja realmente remover este destinatário da equipe de notificações?')) return;
+  try {
+    await api.delete(`/api/notificacoes/destinatarios/${id}`);
+    await loadDestinatarios();
+  } catch (err: any) {
+    alert(err.response?.data?.detail || 'Erro ao excluir destinatário.');
+  }
+};
+
+onMounted(() => {
+  loadDestinatarios();
+});
 </script>

@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, NavigationGuardNext } from 'vue-router';
+import { createRouter, createWebHistory, type RouteRecordRaw, type NavigationGuardNext } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import Home from '../views/Home.vue';
 import Login from '../views/Login.vue';
@@ -7,7 +7,7 @@ import Configuracoes from '../views/Configuracoes.vue';
 import Exemplos from '../views/Exemplos.vue';
 import Pacientes from '../views/Pacientes.vue';
 
-const routes = [
+const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Início',
@@ -34,6 +34,12 @@ const routes = [
     path: '/configuracoes',
     name: 'Configuracoes',
     component: Configuracoes,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/teste-notificacoes',
+    name: 'Teste de Notificações',
+    component: () => import('../views/TesteNotificacoes.vue'),
     meta: { requiresAuth: true },
   },
 ];

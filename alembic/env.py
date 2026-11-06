@@ -26,6 +26,12 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from src.resources.database import Base
+from src.models.refresh_token import RefreshToken
+from src.models.audit_log import AuditLog
+from src.models.usuario import UsuarioSistema
+from src.models.destinatario_notificacao import DestinatarioNotificacao
+from src.models.notificacao_obito import NotificacaoObito
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -34,9 +40,7 @@ target_metadata = Base.metadata
 # ... etc.
 
 # Get the SQLite DSN from environment variables
-sqlite_dsn = os.getenv("SQLITE_DSN")
-if not sqlite_dsn:
-    raise ValueError("SQLITE_DSN not found in environment variables.")
+sqlite_dsn = os.getenv("SQLITE_DSN") or os.getenv("APP_DB_URL") or "sqlite+aiosqlite:///data/app.db"
 
 # Set the sqlalchemy.url in the config to the SQLite DSN
 config.set_main_option("sqlalchemy.url", sqlite_dsn)
