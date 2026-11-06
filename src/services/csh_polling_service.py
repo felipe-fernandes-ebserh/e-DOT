@@ -38,8 +38,8 @@ class CshPollingService:
         logger.info(f"Iniciando serviço de background polling CSH (intervalo: {self.intervalo}s)...")
         while self._running:
             try:
-                # Cria uma sessão do banco local app_db
-                async with self.app_db.session() as db:
+                # Obtém sessão assíncrona do banco local através do sessionmaker do app_db
+                async with self.app_db.async_session_maker() as db:
                     resultado = await NotificacaoObitoController.sincronizar_obitos_csh(
                         db=db,
                         operador="SISTEMA_POLLING",
@@ -50,6 +50,8 @@ class CshPollingService:
                             f"[CSH Polling] {resultado['novos_notificados']} novo(s) óbito(s) notificado(s) com sucesso. "
                             f"(Ignorados/Duplicados: {resultado['ignorados_duplicados']})"
                         )
+                    else:
+                        logger.debug(f"[CSH Polling] Varredura concluída. Nenhum novo óbito. Ignorados/Já existentes: {resultado.get('ignorados_duplicados', 0)}")
             except Exception as e:
                 logger.error(f"[CSH Polling] Erro durante ciclo de sincronização: {e}", exc_info=True)
 
