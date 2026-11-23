@@ -112,12 +112,18 @@ def build_teams_adaptive_card(dados_obito: Dict[str, Any], destinatarios: Option
             "weight": "Bolder" if mention_tags else "Default"
         })
         
+        ocorrencia_texto = dados_obito.get("descricao_ocorrencia") or "Solicitação de Declaração de Óbito no CSH"
+        
         facts = [
-            {"title": "Ocorrência:", "value": "Óbito hospitalar confirmado no sistema"},
-            {"title": "Localização:", "value": str(setor_leito)},
-            {"title": "Data/Hora:", "value": data_hora_str},
-            {"title": "Identificação:", "value": "Dados do paciente pendentes de cadastro na origem"}
+            {"title": "Ocorrência:", "value": ocorrencia_texto},
+            {"title": "Local Solicitante:", "value": str(setor_leito)},
+            {"title": "Data/Hora:", "value": data_hora_str}
         ]
+        
+        # Se houver solicitante ou observação extra, inclui no cartão
+        detalhes_extras = dados_obito.get("causa_morte")
+        if detalhes_extras and detalhes_extras != "Não informada / A apurar":
+            facts.append({"title": "Detalhes:", "value": str(detalhes_extras)})
         
         card_body.append({
             "type": "FactSet",

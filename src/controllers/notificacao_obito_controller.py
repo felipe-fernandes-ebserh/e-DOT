@@ -288,19 +288,21 @@ class NotificacaoObitoController:
             solicitante = item.get("medico_responsavel") or item.get("solicitante") or "Não informado"
             ramal = item.get("ramal_contato") or item.get("ramal") or ""
             obs = item.get("causa_obito") or item.get("obs") or ""
+            setor_origem = item.get("setor_solicitante") or item.get("setor_obito") or "Setor não informado"
             
             detalhe_extra = f"Solicitante: {solicitante}"
             if ramal:
-                detalhe_extra += f" | Ramal: {ramal}"
+                detalhe_extra += f" (Ramal: {ramal})"
             if obs:
                 detalhe_extra += f" | Obs: {obs}"
 
             dados_obito = {
                 "id_evento_origem": id_evento,
-                "nome_paciente": item.get("paciente_nome") if item.get("paciente_nome") != "Identificação Pendente / Triagem Obstétrica" else None,
-                "setor_leito": f"{item.get('setor_obito', 'Triagem Obstétrica')} (Solicitação de DO #{id_evento})",
+                "descricao_ocorrencia": f"Solicitação de Declaração de Óbito no CSH (#{id_evento})",
+                "nome_paciente": None,  # Não exibe campo de paciente pois na solicitação de material não há paciente cadastrado
+                "setor_leito": f"{setor_origem}",
                 "causa_morte": detalhe_extra,
-                "prontuario": item.get("paciente_prontuario"),
+                "prontuario": None,
                 "data_hora_obito": item.get("data_hora_obito") or datetime.now(timezone.utc)
             }
 

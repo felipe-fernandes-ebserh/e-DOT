@@ -9,16 +9,18 @@ SELECT
     COALESCE(NULLIF(TRIM(cm.pacienteChamado), ''), 'Identificação Pendente / Triagem Obstétrica') AS paciente_nome,
     NULL AS paciente_prontuario,
     NULL AS paciente_idade,
-    'Triagem Obstétrica' AS leito,
-    'Triagem Obstétrica' AS setor_obito,
+    COALESCE(l_orig.nomeLocal, 'Setor não identificado') AS setor_solicitante,
+    'Triagem Obstétrica' AS setor_destino,
     cm.dataCriacao AS data_hora_obito,
     cm.obs AS causa_obito,
     cm.solicitante AS medico_responsavel,
     cm.ramal AS ramal_contato,
+    cm.idOrigem AS id_local_origem,
     dcm.idLocal AS id_local_destino,
     cm.idTipoMaterial AS id_tipo_material
 FROM chamadomateriais cm
 INNER JOIN destinochamadomaterial dcm ON dcm.idChamadoMaterial = cm.idChamadoMaterial
+LEFT JOIN local l_orig ON l_orig.idLocal = cm.idOrigem
 WHERE cm.idTipoMaterial = #id_tipo_material
   AND dcm.idLocal = #id_local_destino
   AND cm.isAtivo = 1
