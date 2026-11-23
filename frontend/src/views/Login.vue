@@ -1,8 +1,15 @@
 <template>
   <div class="w-full max-w-md">
+    <div class="flex flex-col items-center mb-5">
+      <div class="bg-white rounded-xl px-4 py-2.5 shadow-sm border border-gray-200 mb-3">
+        <img src="/logo-hc-ebserh.png" alt="HC-UFPE EBSERH" class="h-10 w-auto object-contain" />
+      </div>
+      <h2 class="text-2xl font-extrabold text-white tracking-tight">{{ SYSTEM_TITLE }}</h2>
+      <p class="text-xs text-gray-300">Notificação de Óbitos &bull; Busca Ativa CIHDOTT</p>
+    </div>
     <Card>
       <template #header>
-        <h1 class="text-xl font-semibold text-center">Login</h1>
+        <h1 class="text-xl font-semibold text-center">Acesso ao Sistema</h1>
       </template>
       <form @submit.prevent="handleLogin">
         <div class="mb-4">
@@ -64,7 +71,7 @@ import { useAuthStore } from '../stores/auth';
 import Card from '../components/Card.vue';
 import Button from '../components/Button.vue';
 import { ArrowRightOnRectangleIcon, EyeIcon, EyeSlashIcon, XCircleIcon } from '@heroicons/vue/24/outline';
-import { APP_VERSION, HOSPITAL_NAME, DEPARTMENT_NAME } from '../config/version';
+import { APP_VERSION, HOSPITAL_NAME, DEPARTMENT_NAME, SYSTEM_TITLE } from '../config/version';
 
 const username = ref('');
 const password = ref('');

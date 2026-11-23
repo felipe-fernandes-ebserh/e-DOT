@@ -32,13 +32,25 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/configuracoes',
-    name: 'Configuracoes',
+    name: 'Configurações',
     component: Configuracoes,
     meta: { requiresAuth: true },
   },
   {
+    path: '/equipe-teams',
+    name: 'Equipe Teams',
+    component: () => import('../views/EquipeTeams.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/historico-notificacoes',
+    name: 'Histórico de Notificações',
+    component: () => import('../views/HistoricoNotificacoes.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/teste-notificacoes',
-    name: 'Teste de Notificações',
+    name: 'Teste Teams',
     component: () => import('../views/TesteNotificacoes.vue'),
     meta: { requiresAuth: true },
   },

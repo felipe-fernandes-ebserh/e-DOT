@@ -6,6 +6,7 @@ de Declaração de Óbito e aciona as notificações do Microsoft Teams de forma
 assíncrona e resiliente.
 """
 
+from datetime import datetime, timezone
 import asyncio
 import logging
 from typing import Optional
@@ -33,6 +34,10 @@ class CshPollingService:
         self.ativo = ativo if ativo is not None else CSH_POLLING_ATIVO
         self._task: Optional[asyncio.Task] = None
         self._running = False
+        self.last_check_at: Optional[datetime] = None
+        self.last_status: str = "AGUARDANDO"
+        self.last_error: Optional[str] = None
+        self.last_novos: int = 0
 
     async def _loop(self):
         logger.info(f"Iniciando serviço de background polling CSH (intervalo: {self.intervalo}s)...")
@@ -45,14 +50,21 @@ class CshPollingService:
                         operador="SISTEMA_POLLING",
                         limite=50
                     )
-                    if resultado.get("novos_notificados", 0) > 0:
+                    self.last_check_at = datetime.now(timezone.utc)
+                    self.last_status = "OK"
+                    self.last_error = None
+                    self.last_novos = resultado.get("novos_notificados", 0)
+                    if self.last_novos > 0:
                         logger.info(
-                            f"[CSH Polling] {resultado['novos_notificados']} novo(s) óbito(s) notificado(s) com sucesso. "
+                            f"[CSH Polling] {self.last_novos} novo(s) óbito(s) notificado(s) com sucesso. "
                             f"(Ignorados/Duplicados: {resultado['ignorados_duplicados']})"
                         )
                     else:
                         logger.debug(f"[CSH Polling] Varredura concluída. Nenhum novo óbito. Ignorados/Já existentes: {resultado.get('ignorados_duplicados', 0)}")
             except Exception as e:
+                self.last_check_at = datetime.now(timezone.utc)
+                self.last_status = "ERRO"
+                self.last_error = str(e)
                 logger.error(f"[CSH Polling] Erro durante ciclo de sincronização: {e}", exc_info=True)
 
             try:

@@ -335,3 +335,84 @@ class NotificacaoObitoController:
             "falhas": falhas,
             "detalhes": detalhes
         }
+
+    @staticmethod
+    async def reenviar_notificacao(
+        db: AsyncSession,
+        notif_id: int,
+        operador: str,
+        ip_origem: Optional[str] = None
+    ) -> NotificacaoObito:
+        """Reenvia uma notificação existente (ex: com status FALHA_ENVIO) para o Teams."""
+        notif = await NotificacaoObitoController.obter_notificacao(db, notif_id)
+        if not notif:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Notificação não encontrada"
+            )
+
+        status_anterior = notif.status_envio
+
+        # Coleta destinatários ativos atuais caso não haja lista salva
+        lista_destinatarios: List[Dict[str, str]] = []
+        if notif.destinatarios_notificados:
+            try:
+                parsed = json.loads(notif.destinatarios_notificados)
+                if isinstance(parsed, list):
+                    lista_destinatarios = parsed
+            except Exception:
+                lista_destinatarios = []
+        if not lista_destinatarios:
+            destinatarios_db = await DestinatarioController.listar_destinatarios(db, apenas_ativos=True)
+            lista_destinatarios = [
+                {"nome": d.nome, "email_teams": d.email_teams}
+                for d in destinatarios_db
+            ]
+
+        dados_obito = {
+            "id_evento_origem": notif.id_evento_origem,
+            "descricao_ocorrencia": (
+                f"Solicitação de Declaração de Óbito no CSH (#{notif.id_evento_origem})"
+                if notif.fonte_origem == "CSH_MYSQL"
+                else None
+            ),
+            "nome_paciente": notif.nome_paciente,
+            "idade": notif.idade,
+            "sexo": notif.sexo,
+            "causa_morte": notif.causa_morte,
+            "setor_leito": notif.setor_leito,
+            "prontuario": notif.prontuario,
+            "data_hora_obito": notif.data_hora_obito,
+        }
+
+        card_payload = build_teams_adaptive_card(dados_obito, lista_destinatarios)
+        teams_service = TeamsService()
+        envio_res = await teams_service.send_notification(card_payload)
+
+        notif.tentativas_envio = (notif.tentativas_envio or 0) + envio_res.get("attempts", 1)
+        if envio_res.get("success"):
+            notif.status_envio = "SIMULADO" if envio_res.get("simulated") else "ENVIADO"
+            notif.data_envio = datetime.now(timezone.utc)
+            notif.ultimo_erro = None
+        else:
+            notif.status_envio = "FALHA_ENVIO"
+            notif.ultimo_erro = envio_res.get("error")
+
+        await db.commit()
+        await db.refresh(notif)
+
+        await registrar_auditoria(
+            db=db,
+            usuario=operador,
+            categoria="NEGOCIO_CLINICO",
+            acao="REENVIAR_NOTIFICACAO_OBITO",
+            recurso=f"notificacao:{notif.id}",
+            dados_anteriores={"status_envio": status_anterior},
+            dados_novos={
+                "status_envio": notif.status_envio,
+                "tentativas_envio": notif.tentativas_envio,
+            },
+            ip_origem=ip_origem
+        )
+
+        return notif

@@ -6,6 +6,7 @@ de alertas ao Microsoft Teams, simulação de testes e gerenciamento da equipe.
 """
 
 from typing import List, Optional, Dict, Any
+from datetime import datetime
 from fastapi import APIRouter, Depends, Request, status, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -75,10 +76,15 @@ class NotificacaoResponseSchema(BaseModel):
     nome_paciente: Optional[str] = None
     prontuario: Optional[str] = None
     setor_leito: Optional[str] = None
+    causa_morte: Optional[str] = None
     modo_apresentacao: str
+    destinatarios_notificados: Optional[str] = None
     status_envio: str
     tentativas_envio: int
     ultimo_erro: Optional[str] = None
+    data_hora_obito: Optional[datetime] = None
+    data_envio: Optional[datetime] = None
+    data_criacao: Optional[datetime] = None
 
 
 # --- Endpoints de Destinatários ---
@@ -218,6 +224,22 @@ async def registrar_e_disparar_obito(
     )
 
 
+@router.get("/csh/status-monitoramento")
+async def obter_status_monitoramento(request: Request):
+    """Retorna o status em tempo real do serviço de polling do CSH e webhook do Teams."""
+    from ..config import Settings
+    polling = getattr(request.app.state, "csh_polling_service", None)
+    return {
+        "polling_ativo": bool(polling and polling._running),
+        "intervalo_segundos": polling.intervalo if polling else Settings.CSH_POLLING_INTERVALO_SEGUNDOS,
+        "last_check_at": polling.last_check_at.isoformat() if (polling and polling.last_check_at) else None,
+        "last_status": polling.last_status if polling else "INATIVO",
+        "last_error": polling.last_error if polling else None,
+        "teams_ativo": Settings.TEAMS_NOTIFICACOES_ATIVO,
+        "teams_simulado": not bool(Settings.TEAMS_WEBHOOK_URL and "exemplo" not in Settings.TEAMS_WEBHOOK_URL),
+    }
+
+
 @router.get(
     "/csh/teste-conexao",
     dependencies=[Depends(verify_coordenacao_or_admin)]
@@ -267,3 +289,25 @@ async def listar_historico_notificacoes(
 ):
     """Lista o histórico de notificações e status de entrega ao Teams."""
     return await NotificacaoObitoController.listar_notificacoes(db=db, limit=limit)
+
+
+@router.post(
+    "/obitos/{notif_id}/reenviar",
+    response_model=NotificacaoResponseSchema,
+    dependencies=[Depends(verify_coordenacao_or_admin)]
+)
+async def reenviar_notificacao(
+    notif_id: int,
+    request: Request,
+    current_user: dict = Depends(verify_coordenacao_or_admin),
+    db: AsyncSession = Depends(get_app_db_session)
+):
+    """Reenvia uma notificação existente (ex: após falha) para o Microsoft Teams."""
+    operador = current_user.get("username", "sistema")
+    ip_origem = getattr(request.client, "host", None) if request.client else None
+    return await NotificacaoObitoController.reenviar_notificacao(
+        db=db,
+        notif_id=notif_id,
+        operador=operador,
+        ip_origem=ip_origem
+    )

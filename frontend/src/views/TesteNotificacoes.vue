@@ -16,12 +16,22 @@
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <Button variant="secondary" size="sm" @click="abrirGerenciarEquipe">
-              <template #icon>
-                <UserGroupIcon class="h-4 w-4 text-gray-600" />
-              </template>
-              Gerenciar Equipe Teams
-            </Button>
+            <router-link to="/equipe-teams">
+              <Button variant="secondary" size="sm">
+                <template #icon>
+                  <UserGroupIcon class="h-4 w-4 text-gray-600" />
+                </template>
+                Configurar Equipe
+              </Button>
+            </router-link>
+            <router-link to="/historico-notificacoes">
+              <Button variant="secondary" size="sm">
+                <template #icon>
+                  <ClockIcon class="h-4 w-4 text-gray-600" />
+                </template>
+                Ver Histórico
+              </Button>
+            </router-link>
             <span 
               :class="teamsStatusBadge.class" 
               class="px-3 py-1 text-xs font-semibold rounded-full border flex items-center gap-1.5"
@@ -520,13 +530,12 @@
                 <UserGroupIcon class="h-4 w-4 text-gray-600" />
                 Equipe Teams Cadastrada ({{ activeDestinatarios.length }} ativos)
               </h3>
-              <button 
-                type="button"
-                @click="abrirGerenciarEquipe" 
+              <router-link 
+                to="/equipe-teams" 
                 class="text-xs text-primary-600 hover:underline font-semibold"
               >
-                Gerenciar Equipe
-              </button>
+                Configurar Equipe &rarr;
+              </router-link>
             </div>
 
             <div v-if="loadingDestinatarios" class="text-xs text-gray-500 py-2 text-center">
@@ -557,13 +566,21 @@
             <ClockIcon class="h-5 w-5 text-gray-500" />
             Histórico Recente de Notificações
           </h2>
-          <button 
-            @click="carregarHistorico" 
-            class="text-xs text-primary-600 hover:text-primary-800 font-semibold flex items-center gap-1"
-          >
-            <ArrowPathIcon class="h-3.5 w-3.5" :class="{ 'animate-spin': loadingHistorico }" />
-            Atualizar Lista
-          </button>
+          <div class="flex items-center gap-4">
+            <router-link
+              to="/historico-notificacoes"
+              class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold"
+            >
+              Ver Histórico Completo &rarr;
+            </router-link>
+            <button 
+              @click="carregarHistorico" 
+              class="text-xs text-primary-600 hover:text-primary-800 font-semibold flex items-center gap-1"
+            >
+              <ArrowPathIcon class="h-3.5 w-3.5" :class="{ 'animate-spin': loadingHistorico }" />
+              Atualizar Lista
+            </button>
+          </div>
         </div>
 
         <div class="overflow-x-auto bg-white border border-gray-200 rounded-xl">
